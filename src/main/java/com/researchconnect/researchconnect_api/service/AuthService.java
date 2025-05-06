@@ -1,5 +1,13 @@
 package com.researchconnect.researchconnect_api.service;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.researchconnect.researchconnect_api.dto.AuthRequest;
 import com.researchconnect.researchconnect_api.dto.JwtResponse;
 import com.researchconnect.researchconnect_api.dto.SignupRequest;
@@ -8,15 +16,9 @@ import com.researchconnect.researchconnect_api.entity.User;
 import com.researchconnect.researchconnect_api.repository.UserRepository;
 import com.researchconnect.researchconnect_api.security.JwtTokenProvider;
 import com.researchconnect.researchconnect_api.security.UserDetailsImpl;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

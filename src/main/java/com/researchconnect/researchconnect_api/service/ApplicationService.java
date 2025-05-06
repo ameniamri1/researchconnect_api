@@ -1,5 +1,14 @@
 package com.researchconnect.researchconnect_api.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.researchconnect.researchconnect_api.dto.ApplicationRequest;
 import com.researchconnect.researchconnect_api.dto.ApplicationResponse;
 import com.researchconnect.researchconnect_api.dto.ApplicationStatusUpdateRequest;
@@ -9,16 +18,9 @@ import com.researchconnect.researchconnect_api.entity.User;
 import com.researchconnect.researchconnect_api.repository.ApplicationRepository;
 import com.researchconnect.researchconnect_api.repository.TopicRepository;
 import com.researchconnect.researchconnect_api.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,28 +33,29 @@ public class ApplicationService {
 
     public List<ApplicationResponse> getAllApplications() {
         log.debug("Récupération de toutes les candidatures");
-
+    
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new IllegalStateException("Utilisateur actuel non trouvé"));
-
-        if (currentUser.getRole() == User.Role.ROLE_ADMIN) {
-            return applicationRepository.findAll().stream()
+    
+        return switch (currentUser.getRole()) {
+            case ROLE_ADMIN -> applicationRepository.findAll().stream()
                     .map(ApplicationResponse::fromEntity)
                     .collect(Collectors.toList());
-        } else if (currentUser.getRole() == User.Role.ROLE_TEACHER) {
-            // Les enseignants ne voient que les candidatures pour leurs sujets
-            return applicationRepository.findAll().stream()
+    
+            case ROLE_TEACHER -> applicationRepository.findAll().stream()
                     .filter(app -> app.getTopic().getTeacher().getId().equals(currentUser.getId()))
                     .map(ApplicationResponse::fromEntity)
                     .collect(Collectors.toList());
-        } else {
-            // Les étudiants ne voient que leurs propres candidatures
-            return applicationRepository.findByStudent(currentUser).stream()
+    
+            case ROLE_STUDENT -> applicationRepository.findByStudent(currentUser).stream()
                     .map(ApplicationResponse::fromEntity)
                     .collect(Collectors.toList());
-        }
+    
+            default -> throw new IllegalStateException("Rôle utilisateur non supporté : " + currentUser.getRole());
+        };
     }
+    
 
     public ApplicationResponse getApplicationById(Long applicationId) {
         log.debug("Récupération de la candidature par ID: {}", applicationId);
